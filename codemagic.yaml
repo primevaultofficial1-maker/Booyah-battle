@@ -1,0 +1,41 @@
+# Codemagic CI/CD configuration for Native Android
+# Reference: https://docs.codemagic.io/yaml-quick-start/building-a-native-android-app/
+
+workflows:
+  android-workflow:
+    name: Native Android Workflow
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      java: 17
+    triggering:
+      events:
+        - push
+        - pull_request
+      branch_patterns:
+        - pattern: '*'
+          include: true
+          source: true
+    scripts:
+      - name: Set up local.properties
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+      - name: Set up Environment Variables (.env)
+        script: |
+          # Copy .env.example to .env to prevent build errors with Secrets Gradle Plugin
+          if [ -f .env.example ] && [ ! -f .env ]; then
+            cp .env.example .env
+          fi
+      - name: Build Android Debug APK and Release AAB
+        script: |
+          # Make gradlew executable
+          chmod +x gradlew
+          # Build the APK and Release App Bundle
+          ./gradlew assembleDebug bundleRelease
+    artifacts:
+      - app/build/outputs/apk/**/*.apk
+      - app/build/outputs/bundle/**/*.aab
+    publishing:
+      email:
+        recipients:
+          - devidasnage13@gmail.com # Automatically configured for your email
